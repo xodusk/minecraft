@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>채굴 빙고 — 마인크래프트 아이템 빙고판</title>
+<style>
+  :root{
+    --bedrock:#1b1a17;
+    --stone:#26241f;
+    --stone-light:#332f28;
+    --limestone:#e9e2d0;
+    --limestone-dim:#c9c0a9;
+    --ochre:#e8a33d;
+    --sage:#7c9473;
+    --sage-dark:#5a7057;
+    --rust:#c17a4a;
+    --rust-dark:#8f5330;
+    --amethyst:#a179d9;
+    --amethyst-dark:#6b4a8a;
+    --ember:#d9542f;
+    --line-glow:#ffe9a8;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 20% 0%, #2a2721 0%, transparent 45%),
+      radial-gradient(circle at 85% 100%, #201d19 0%, transparent 50%),
+      var(--bedrock);
+    color:var(--limestone);
+    font-family: -apple-system, "Segoe UI", "Pretendard", "Noto Sans KR", ui-sans-serif, sans-serif;
+    min-height:100vh;
+    padding:32px 16px 60px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .mono{ font-family: ui-monospace, "SFMono-Regular", "Cascadia Code", Consolas, monospace; }
+
+  header{ width:100%; max-width:920px; text-align:center; margin-bottom:28px; }
+  .eyebrow{ font-family: ui-monospace, monospace; font-size:12px; letter-spacing:.25em; color:var(--ochre); text-transform:uppercase; margin-bottom:10px; }
+  h1{ font-size:clamp(28px,5vw,44px); font-weight:800; letter-spacing:-0.01em; margin:0 0 10px; line-height:1.15; text-shadow: 3px 3px 0 rgba(0,0,0,.35); }
+  h1 span{ color:var(--ochre); }
+  .sub{ color:var(--limestone-dim); font-size:14.5px; max-width:560px; margin:0 auto; line-height:1.6; }
+
+  .panel{ width:100%; max-width:920px; background:var(--stone); border:1px solid #3a352c; border-radius:10px; padding:18px 20px; margin-bottom:22px; box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03); }
+  .row{ display:flex; flex-wrap:wrap; gap:18px 28px; align-items:flex-end; }
+  .field{ display:flex; flex-direction:column; gap:8px; }
+  .field label{ font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--limestone-dim); font-family: ui-monospace, monospace; }
+  .seg{ display:flex; border:1px solid #454034; border-radius:6px; overflow:hidden; }
+  .seg button{ background:var(--stone-light); color:var(--limestone-dim); border:none; padding:8px 14px; font-size:13.5px; font-weight:600; cursor:pointer; border-right:1px solid #454034; transition: background .15s, color .15s; }
+  .seg button:last-child{ border-right:none; }
+  .seg button.active{ background:var(--ochre); color:#1b1a17; }
+  .seg button:hover:not(.active){ background:#3d382e; color:var(--limestone); }
+
+  .tier-toggle{ display:flex; gap:8px; }
+  .tier-chip{ display:flex; align-items:center; gap:6px; padding:7px 12px; border-radius:6px; border:1px solid transparent; font-size:13px; font-weight:700; cursor:pointer; user-select:none; transition: opacity .15s, transform .1s; }
+  .tier-chip:active{ transform:scale(.97); }
+  .tier-chip.off{ opacity:.35; }
+  .tier-chip[data-tier="easy"]{ background:rgba(124,148,115,.18); border-color:var(--sage-dark); color:var(--sage); }
+  .tier-chip[data-tier="medium"]{ background:rgba(193,122,74,.18); border-color:var(--rust-dark); color:var(--rust); }
+  .tier-chip[data-tier="hard"]{ background:rgba(161,121,217,.18); border-color:var(--amethyst-dark); color:var(--amethyst); }
+  .tier-chip .dot{ width:8px; height:8px; border-radius:2px; background:currentColor; }
+
+  .spacer{ flex:1; }
+  .btn{ padding:10px 20px; border-radius:6px; border:none; font-weight:800; font-size:14px; letter-spacing:.02em; cursor:pointer; transition: filter .15s, transform .1s; }
+  .btn:active{ transform:scale(.97); }
+  .btn-primary{ background:var(--ochre); color:#1b1a17; box-shadow: 0 3px 0 #a5701f; }
+  .btn-primary:hover{ filter:brightness(1.08); }
+  .btn-ghost{ background:transparent; color:var(--limestone-dim); border:1px solid #454034; }
+  .btn-ghost:hover{ color:var(--limestone); border-color:#5a5344; }
+
+  .count-note{ font-size:12px; color:var(--limestone-dim); margin-top:8px; font-family: ui-monospace, monospace; }
+  .count-note b{ color:var(--ochre); }
+  .warn{ color:var(--ember) !important; }
+
+  .status{ width:100%; max-width:920px; display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; font-family: ui-monospace, monospace; font-size:13px; color:var(--limestone-dim); }
+  .status .bingo-count b{ color:var(--line-glow); font-size:15px; }
+
+  .board-wrap{ width:100%; max-width:920px; position:relative; }
+  .board{ display:grid; gap:8px; width:100%; }
+  .cell{
+    position:relative;
+    aspect-ratio:1/1;
+    background: linear-gradient(180deg, var(--stone-light) 0%, var(--stone) 100%);
+    border-radius:4px;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    padding:8px;
+    overflow:hidden;
+    transition: transform .12s ease, box-shadow .12s ease;
+    border:1px solid #3a352c;
+  }
+  .cell:hover{ transform:translateY(-2px); box-shadow:0 6px 14px rgba(0,0,0,.4); }
+  .cell .stratum{ position:absolute; top:0; left:0; right:0; height:6px; }
+  .cell[data-tier="easy"] .stratum{ background:var(--sage); }
+  .cell[data-tier="medium"] .stratum{ background:var(--rust); }
+  .cell[data-tier="hard"] .stratum{ background:var(--amethyst); }
+
+  .cell .tier-label{ font-family: ui-monospace, monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; margin-top:8px; opacity:.6; }
+  .cell[data-tier="easy"] .tier-label{ color:var(--sage); }
+  .cell[data-tier="medium"] .tier-label{ color:var(--rust); }
+  .cell[data-tier="hard"] .tier-label{ color:var(--amethyst); }
+
+  .cell .qty{ position:absolute; top:6px; right:7px; font-size:10.5px; font-weight:800; color:var(--ochre); background:rgba(0,0,0,.28); padding:2px 6px; border-radius:10px; letter-spacing:.02em; }
+
+  .cell .name{ flex:1; display:flex; align-items:center; justify-content:center; text-align:center; font-weight:700; font-size:clamp(11px,1.6vw,15px); line-height:1.25; padding:2px 2px; word-break:keep-all; }
+
+  .cell.checked{ background: linear-gradient(180deg, #3a4a37 0%, #2a3527 100%); border-color: var(--sage); }
+  .cell.checked::after{ content:"✓"; position:absolute; right:6px; bottom:4px; font-size:18px; color:var(--sage); font-weight:900; }
+  .cell.checked .name{ color:var(--limestone-dim); text-decoration: line-through; text-decoration-color: rgba(233,226,208,.4); }
+
+  .cell.win-line{ animation: glow 1.4s ease-in-out infinite; border-color: var(--line-glow) !important; }
+  @keyframes glow{ 0%,100%{ box-shadow: 0 0 0px rgba(255,233,168,0); } 50%{ box-shadow: 0 0 18px rgba(255,233,168,.55); } }
+
+  .free{ background: linear-gradient(180deg, #4a3a1f 0%, #362a17 100%) !important; border-color: var(--ochre) !important; }
+  .free .name{ color:var(--ochre); }
+
+  footer{ margin-top:26px; font-size:12px; color:var(--limestone-dim); text-align:center; max-width:640px; line-height:1.7; }
+
+  @media (max-width:520px){ .row{ gap:12px 18px; } .status{ font-size:11.5px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow mono">MINECRAFT JAVA EDITION · ITEM BINGO</div>
+  <h1>채굴 <span>빙고</span></h1>
+  <p class="sub">게임 내 실제 아이템 이름으로만 구성된 빙고판입니다. 난이도별로 섞인 미션을 완료하고, 획득한 아이템을 클릭해서 표시해보세요.</p>
+</header>
+
+<div class="panel">
+  <div class="row">
+    <div class="field">
+      <label>보드 크기</label>
+      <div class="seg" id="sizeSeg">
+        <button data-size="3">3×3</button>
+        <button data-size="4">4×4</button>
+        <button data-size="5" class="active">5×5</button>
+        <button data-size="6">6×6</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>난이도 구성</label>
+      <div class="tier-toggle" id="tierToggle">
+        <div class="tier-chip" data-tier="easy"><span class="dot"></span>쉬움</div>
+        <div class="tier-chip" data-tier="medium"><span class="dot"></span>보통</div>
+        <div class="tier-chip" data-tier="hard"><span class="dot"></span>어려움</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>가운데 칸</label>
+      <div class="seg" id="freeSeg">
+        <button data-free="1" class="active">자유 칸</button>
+        <button data-free="0">아이템 채우기</button>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="field">
+      <button class="btn btn-ghost" id="resetBtn">체크 초기화</button>
+    </div>
+    <div class="field">
+      <button class="btn btn-primary" id="genBtn">새 빙고판 생성</button>
+    </div>
+  </div>
+  <div class="count-note" id="countNote"></div>
+</div>
+
+<div class="status">
+  <div>아이템 데이터베이스 <b class="mono" id="dbCount" style="color:var(--ochre)"></b>개 (전부 게임 내 실제 아이템명)</div>
+  <div class="bingo-count">빙고 <b id="bingoCount">0</b>줄</div>
+</div>
+
+<div class="board-wrap">
+  <div class="board" id="board"></div>
+</div>
+
+<footer>
+  칸을 클릭하면 획득 체크가 되고, 다시 클릭하면 취소됩니다. 가로·세로·대각선을 완성하면 해당 줄이 빛납니다.<br>
+  우측 상단 숫자는 목표 수량입니다. 도구·갑옷·물약처럼 여러 개를 모으는 게 의미 없는 아이템은 자동으로 1개로 고정돼요.
+</footer>
+
+<script>
+/* ---------------- Item database (tiered) ----------------
+   전부 게임 내 실제 아이템/블록명 (한국어 공식 명칭 기준, Java Edition).
+   세트로 묶이는 장비류(도구/갑옷)는 개별 아이템으로 분리했습니다. */
+const ITEMS = {
+  easy: [
+    "흙","잔디 블록","조약돌","돌","모래","자갈","참나무 원목","자작나무 원목","가문비나무 원목","정글나무 원목",
+    "막대기","나무 판자","나무 도끼","나무 곡괭이","나무 삽","나무 괭이","나무 검",
+    "돌 도끼","돌 곡괭이","돌 삽","돌 괭이","돌 검",
+    "가죽 모자","가죽 조끼","가죽 바지","가죽 부츠",
+    "화로","제작대","횃불","석탄","숯","부싯돌","양털","실","깃털","가죽","뼈","달걀",
+    "밀","밀 씨앗","빵","사과","당근","감자","구운 감자","독이 있는 감자",
+    "스테이크","익힌 돼지고기","익히지 않은 소고기","익히지 않은 돼지고기","익히지 않은 닭고기","익힌 닭고기",
+    "생대구","익힌 대구","생연어","익힌 연어",
+    "우유 양동이","양동이","물 양동이","용암 양동이","유리","유리병",
+    "화살","활","방패","사탕수수","설탕","점토","벽돌",
+    "대나무","선인장","이끼 낀 조약돌","민들레","양귀비","갈색 버섯","빨간 버섯",
+    "종이","책","거미줄","돌 벽돌","사다리","울타리","울타리 문","나무 문",
+    "하얀색 침대","빨간색 침대","상자","하얀색 현수막","그림","참나무 표지판","가위","부싯돌과 부시","양초",
+    "썩은 살점","거미 눈","슬라임볼","눈덩이","눈 블록","얼음",
+    "뼛가루","화약","호박","수박","수박 조각","호박씨","수박씨","비트","비트 수프",
+    "비트 씨앗","건초 더미","꿀","벌집","켈프","말린 켈프","쿠키","케이크","버섯 스튜","그릇",
+    "달콤한 열매","글로우베리","안장","참나무 보트","광산 수레"
+  ],
+  medium: [
+    "철 주괴","철 조각","철 도끼","철 곡괭이","철 삽","철 괭이","철 검",
+    "철 투구","철 흉갑","철 레깅스","철 부츠",
+    "금 주괴","금 조각","금 도끼","금 곡괭이","금 삽","금 괭이","금 검",
+    "금 투구","금 흉갑","금 레깅스","금 부츠",
+    "황금 사과","황금 당근",
+    "레드스톤 가루","레드스톤 중계기","레드스톤 비교기","청금석","에메랄드",
+    "다이아몬드","다이아몬드 도끼","다이아몬드 곡괭이","다이아몬드 삽","다이아몬드 괭이","다이아몬드 검",
+    "다이아몬드 투구","다이아몬드 흉갑","다이아몬드 레깅스","다이아몬드 부츠",
+    "경험치 병","마법이 부여된 책","책과 깃펜","글이 쓰인 책",
+    "TNT","철 말 갑옷","금 말 갑옷","가죽 말 갑옷","끈","이름표",
+    "낚싯대","나침반","시계","지도","해양 탐험가 지도","삼림 탐험가 지도",
+    "발광석 가루","네더 사마귀","네더 벽돌","블레이즈 막대기","블레이즈 가루",
+    "엔더 진주","가스트 눈물","마그마 크림",
+    "치유의 물약","신속의 물약","재생의 물약","독의 물약","나약함의 물약","힘의 물약","감속의 물약",
+    "쇠뇌","화염구","가마솥","베틀","종","대장장이 작업대","숫돌",
+    "섬록암","안산암","화강암","응회암","방해석","마그마 블록",
+    "도자기 조각","장식 도자기","좀비 머리","크리퍼 머리",
+    "프리즈머린 조각","프리즈머린 수정","바다등불","산호","산호 부채",
+    "튀긴 후렴과","후렴과","반짝이는 수박 조각","발효된 거미 눈","네더 석영","갑옷 거치대","호퍼",
+    "폭죽 로켓","당근 낚싯대"
+  ],
+  hard: [
+    "네더라이트 주괴","네더라이트 파편",
+    "네더라이트 도끼","네더라이트 곡괭이","네더라이트 삽","네더라이트 괭이","네더라이트 검",
+    "네더라이트 투구","네더라이트 흉갑","네더라이트 레깅스","네더라이트 부츠",
+    "고대 잔해","엔더의 눈","용의 알","용의 숨결",
+    "엔드 수정","엔드 로드","겉날개","불사의 토템","네더의 별","비콘",
+    "셜커 상자","셜커 껍데기","위더 스켈레톤 해골","엔더 드래곤 머리",
+    "삼지창","바다의 심장","앵무조개 껍데기",
+    "음반",
+    "마법이 부여된 황금 사과","조각된 호박","엔드 스톤 벽돌",
+    "자수정 조각","인갑","거북 등딱지",
+    "메아리 파편","화염 저항의 물약","수중 호흡의 물약","투명화 물약",
+    "행운의 물약","거북 도사의 물약","부패의 물약",
+    "반향탐지기","토끼발","토끼 가죽"
+  ]
+};
+
+const TOTAL_DB = ITEMS.easy.length + ITEMS.medium.length + ITEMS.hard.length;
+document.getElementById('dbCount').textContent = TOTAL_DB;
+
+/* ---------------- State ---------------- */
+let state = {
+  size: 5,
+  tiers: { easy: true, medium: true, hard: true },
+  free: true,
+  board: []
+};
+
+/* ---------------- Helpers ---------------- */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function buildPool(){
+  let pool = [];
+  Object.keys(state.tiers).forEach(t=>{
+    if(state.tiers[t]) pool = pool.concat(ITEMS[t].map(n=>({name:n, tier:t})));
+  });
+  return pool;
+}
+
+/* ---------------- Quantity logic ---------------- */
+const UNSTACKABLE_PATTERNS = [
+  "검","도끼","곡괭이","삽","괭이","활","방패","투구","흉갑","레깅스","부츠","갑옷",
+  "물약","지도","끈","이름표","안장","낚싯대","가위","부싯돌과 부시",
+  "반향탐지기","비콘","셜커 상자","엔드 수정","용의 알","불사의 토템",
+  "삼지창","바다의 심장","나침반","시계",
+  "가마솥","베틀","종","대장장이 작업대","숫돌","음반","해골","머리",
+  "용의 숨결","엔더의 눈","우유 양동이","양동이","마법이 부여된 책","책과 깃펜","글이 쓰인 책",
+  "겉날개","갑옷 거치대","호퍼","광산 수레","보트"
+];
+function isUnstackable(name){
+  return UNSTACKABLE_PATTERNS.some(p => name.includes(p));
+}
+const QTY_RANGE = { easy:[8,64], medium:[2,32], hard:[1,8] };
+function rollQty(name, tier){
+  if(isUnstackable(name)) return { qty:1, unit:"개" };
+  const [min,max] = QTY_RANGE[tier] || [1,1];
+  const qty = Math.floor(Math.random()*(max-min+1))+min;
+  return { qty, unit:"개" };
+}
+
+const tierLabel = { easy:"쉬움", medium:"보통", hard:"어려움", free:"FREE" };
+
+function generateBoard(){
+  const n = state.size;
+  const total = n*n;
+  const hasFree = state.free && n % 2 === 1;
+  const needed = hasFree ? total - 1 : total;
+
+  const pool = shuffle(buildPool());
+  const notes = document.getElementById('countNote');
+
+  if(pool.length < needed){
+    notes.innerHTML = `<span class="warn">선택한 난이도만으로는 아이템이 ${pool.length}개뿐이라 ${needed}칸을 채울 수 없어요. 난이도를 더 선택해주세요.</span>`;
+    return false;
+  } else {
+    notes.textContent = `사용 가능한 아이템 ${pool.length}개 중 ${needed}개를 무작위로 뽑았어요.`;
+  }
+
+  const picked = pool.slice(0, needed).map(it => {
+    const q = rollQty(it.name, it.tier);
+    return {...it, checked:false, qty:q.qty, unit:q.unit};
+  });
+
+  const cells = [];
+  let pi = 0;
+  const centerIndex = hasFree ? Math.floor(total/2) : -1;
+  for(let i=0;i<total;i++){
+    if(i === centerIndex){
+      cells.push({name:"자유 칸", tier:"free", checked:true, free:true});
+    } else {
+      cells.push(picked[pi++]);
+    }
+  }
+  state.board = cells;
+  return true;
+}
+
+function render(){
+  const board = document.getElementById('board');
+  board.style.gridTemplateColumns = `repeat(${state.size}, 1fr)`;
+  board.innerHTML = "";
+  state.board.forEach((cell, idx)=>{
+    const div = document.createElement('div');
+    div.className = 'cell' + (cell.checked ? ' checked':'') + (cell.free ? ' free':'');
+    div.dataset.tier = cell.tier;
+    div.dataset.idx = idx;
+    div.innerHTML = `
+      <div class="stratum"></div>
+      <div class="tier-label mono">${cell.free ? '' : tierLabel[cell.tier]}</div>
+      <div class="name">${cell.name}</div>
+      ${cell.free ? '' : `<div class="qty mono">${cell.qty}${cell.unit}</div>`}
+    `;
+    if(!cell.free){
+      div.addEventListener('click', ()=>{
+        cell.checked = !cell.checked;
+        render();
+      });
+    }
+    board.appendChild(div);
+  });
+  markWins();
+}
+
+function markWins(){
+  const n = state.size;
+  const cellsEls = Array.from(document.querySelectorAll('.cell'));
+  const grid = [];
+  for(let r=0;r<n;r++) grid.push(state.board.slice(r*n,(r+1)*n));
+
+  let winLines = [];
+  for(let r=0;r<n;r++){
+    if(grid[r].every(c=>c.checked)) winLines.push(Array.from({length:n},(_,c)=>r*n+c));
+  }
+  for(let c=0;c<n;c++){
+    let colChecked = true;
+    for(let r=0;r<n;r++) if(!grid[r][c].checked) colChecked=false;
+    if(colChecked) winLines.push(Array.from({length:n},(_,r)=>r*n+c));
+  }
+  let d1=true, d2=true;
+  for(let i=0;i<n;i++){
+    if(!grid[i][i].checked) d1=false;
+    if(!grid[i][n-1-i].checked) d2=false;
+  }
+  if(d1) winLines.push(Array.from({length:n},(_,i)=>i*n+i));
+  if(d2) winLines.push(Array.from({length:n},(_,i)=>i*n+(n-1-i)));
+
+  const winIdxSet = new Set(winLines.flat());
+  cellsEls.forEach((el,i)=>{
+    el.classList.toggle('win-line', winIdxSet.has(i));
+  });
+  document.getElementById('bingoCount').textContent = winLines.length;
+}
+
+/* ---------------- Controls wiring ---------------- */
+document.getElementById('sizeSeg').addEventListener('click', e=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  document.querySelectorAll('#sizeSeg button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  state.size = parseInt(btn.dataset.size,10);
+});
+
+document.getElementById('freeSeg').addEventListener('click', e=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  document.querySelectorAll('#freeSeg button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  state.free = btn.dataset.free === "1";
+});
+
+document.querySelectorAll('.tier-chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    const t = chip.dataset.tier;
+    const activeCount = Object.values(state.tiers).filter(Boolean).length;
+    if(state.tiers[t] && activeCount === 1){
+      return;
+    }
+    state.tiers[t] = !state.tiers[t];
+    chip.classList.toggle('off', !state.tiers[t]);
+  });
+});
+
+document.getElementById('genBtn').addEventListener('click', ()=>{
+  if(generateBoard()) render();
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  state.board.forEach(c=>{ if(!c.free) c.checked = false; });
+  render();
+});
+
+/* ---------------- Init ---------------- */
+generateBoard();
+render();
+</script>
+</body>
+</html>
