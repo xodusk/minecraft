@@ -61,6 +61,7 @@
   .tier-chip[data-tier="easy"]{ background:rgba(124,148,115,.18); border-color:var(--sage-dark); color:var(--sage); }
   .tier-chip[data-tier="medium"]{ background:rgba(193,122,74,.18); border-color:var(--rust-dark); color:var(--rust); }
   .tier-chip[data-tier="hard"]{ background:rgba(161,121,217,.18); border-color:var(--amethyst-dark); color:var(--amethyst); }
+  .tier-chip[data-tier="extreme"]{background:rgba(217,84,47,.18);border-color:#8f3825;color:#e86a45;}
   .tier-chip .dot{ width:8px; height:8px; border-radius:2px; background:currentColor; }
 
   .spacer{ flex:1; }
@@ -98,11 +99,13 @@
   .cell[data-tier="easy"] .stratum{ background:var(--sage); }
   .cell[data-tier="medium"] .stratum{ background:var(--rust); }
   .cell[data-tier="hard"] .stratum{ background:var(--amethyst); }
+  .cell[data-tier="extreme"] .stratum{background:#e86a45;}
 
   .cell .tier-label{ font-family: ui-monospace, monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; margin-top:8px; opacity:.6; }
   .cell[data-tier="easy"] .tier-label{ color:var(--sage); }
   .cell[data-tier="medium"] .tier-label{ color:var(--rust); }
   .cell[data-tier="hard"] .tier-label{ color:var(--amethyst); }
+  .cell[data-tier="extreme"] .tier-label{color:#e86a45;}
 
   .cell .qty{ position:absolute; top:6px; right:7px; font-size:10.5px; font-weight:800; color:var(--ochre); background:rgba(0,0,0,.28); padding:2px 6px; border-radius:10px; letter-spacing:.02em; }
 
@@ -127,7 +130,7 @@
 
 <header>
   <div class="eyebrow mono">MINECRAFT JAVA EDITION · ITEM BINGO</div>
-  <h1>채굴 <span>빙고</span></h1>
+  <h1>아이템 <span>빙고</span></h1>
   <p class="sub">게임 내 실제 아이템 이름으로만 구성된 빙고판입니다. 난이도별로 섞인 미션을 완료하고, 획득한 아이템을 클릭해서 표시해보세요.</p>
 </header>
 
@@ -149,6 +152,7 @@
         <div class="tier-chip" data-tier="easy"><span class="dot"></span>쉬움</div>
         <div class="tier-chip" data-tier="medium"><span class="dot"></span>보통</div>
         <div class="tier-chip" data-tier="hard"><span class="dot"></span>어려움</div>
+        <div class="tier-chip" data-tier="extreme"><span class="dot"></span>매우 어려움
       </div>
     </div>
 
@@ -243,16 +247,18 @@ const ITEMS = {
     "마법이 부여된 황금 사과","엔드 스톤 벽돌",
     "자수정 조각","인갑","거북 등딱지",
     "메아리 파편","토끼발","좀비 머리","크리퍼 머리"
-  ]
+  ],
+  extreme: [
+    ]
 };
 
-const TOTAL_DB = ITEMS.easy.length + ITEMS.medium.length + ITEMS.hard.length;
+const TOTAL_DB = ITEMS.easy.length + ITEMS.medium.length + ITEMS.hard.length + ITEMS.extreme.length;
 document.getElementById('dbCount').textContent = TOTAL_DB;
 
 /* ---------------- State ---------------- */
 let state = {
   size: 5,
-  tiers: { easy: true, medium: true, hard: true },
+  tiers: { easy: true, medium: true, hard: true, extreme: true },
   free: true,
   board: []
 };
@@ -284,11 +290,11 @@ const UNSTACKABLE_PATTERNS = [
   "가마솥","베틀","종","대장장이 작업대","숫돌","음반","해골","머리",
   "용의 숨결","엔더의 눈","우유 양동이","양동이","마법이 부여된 책","책과 깃펜","글이 쓰인 책",
   "겉날개","갑옷 거치대","호퍼","광산 수레","보트"
-];
+];//목표 수량 1개 단어들
 function isUnstackable(name){
   return UNSTACKABLE_PATTERNS.some(p => name.includes(p));
 }
-const QTY_RANGE = { easy:[8,64], medium:[2,32], hard:[1,8] };
+const QTY_RANGE = { easy:[8,64], medium:[2,32], hard:[1,8], extreme:[1,3] };
 function rollQty(name, tier){
   if(isUnstackable(name)) return { qty:1, unit:"개" };
   const [min,max] = QTY_RANGE[tier] || [1,1];
@@ -296,7 +302,7 @@ function rollQty(name, tier){
   return { qty, unit:"개" };
 }
 
-const tierLabel = { easy:"쉬움", medium:"보통", hard:"어려움", free:"FREE" };
+const tierLabel = { easy:"쉬움", medium:"보통", hard:"어려움", extreme:"매우 어려움", free:"FREE" };
 
 function generateBoard(){
   const n = state.size;
